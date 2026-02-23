@@ -53,18 +53,18 @@
   .page-title { font-family:'Black Han Sans',sans-serif; font-size:32px; color:var(--dark); letter-spacing:1px; }
   .subtitle { font-size:20px; color:var(--wood); }
 
-  /* ── 공지사항 바 ── */
-  .notice-bar {
-    max-width:620px; margin:0 auto 4px; padding:0 12px;
-  }
+  /* ── 공지사항 ── */
+  .notice-bar { max-width:620px; margin:0 auto 8px; padding:0 12px; }
   .notice-content {
-    background:var(--dark); color:var(--bg);
-    font-size:16px; padding:7px 14px;
-    box-shadow:3px 3px 0 var(--wood2);
     display:none;
+    background:var(--dark); color:var(--bg);
+    padding:10px 16px; box-shadow:4px 4px 0 var(--wood2);
+    border-left:5px solid #d4a030;
   }
-  .notice-content.show { display:block; }
-  body.admin-mode .notice-content { border:2px dashed var(--admin); }
+  .notice-content.show { display:flex; align-items:flex-start; gap:10px; }
+  .notice-icon { font-size:20px; flex-shrink:0; margin-top:2px; }
+  .notice-text { font-size:17px; line-height:1.5; }
+  body.admin-mode .notice-content { border:2px dashed var(--admin); box-shadow:4px 4px 0 var(--admin2); }
 
   .legend { display:flex; justify-content:center; gap:20px; padding:8px 0 3px; }
   .li { display:flex; align-items:center; gap:6px; font-size:18px; color:var(--dark); }
@@ -237,6 +237,58 @@
   .tooltip { position:fixed; background:var(--dark); color:var(--bg); padding:6px 14px; font-family:'Black Han Sans',sans-serif; font-size:14px; pointer-events:none; z-index:999; opacity:0; transition:opacity 0.15s; white-space:nowrap; box-shadow:3px 3px 0 var(--wood2); border:1px solid var(--wood2); }
   .tooltip.show { opacity:1; }
 
+  /* ── 오늘의 LP ── */
+  .lp-section { max-width:620px; margin:0 auto 16px; padding:0 12px; }
+  .lp-section-inner {
+    background:var(--lp-dark);
+    border:var(--px) solid var(--dark);
+    box-shadow:5px 5px 0 var(--wood2);
+    padding:16px 18px;
+  }
+  .lp-section-header {
+    display:flex; align-items:center; gap:10px;
+    border-bottom:2px solid #5a1818; padding-bottom:10px; margin-bottom:14px;
+  }
+  .lp-spinning {
+    width:28px; height:28px; border-radius:50%; flex-shrink:0;
+    background:conic-gradient(#060606 0deg,#161616 45deg,#060606 90deg,#1e1e1e 135deg,#060606 180deg,#161616 225deg,#060606 270deg,#1e1e1e 315deg,#060606 360deg);
+    border:3px solid #484848; animation:spin 3s linear infinite;
+  }
+  .lp-section-title { font-family:'Black Han Sans',sans-serif; font-size:18px; color:#f0c8c0; letter-spacing:1px; }
+  .lp-date { font-size:14px; color:#886858; margin-left:auto; }
+
+  /* LP 카드 */
+  .lp-list { display:flex; flex-direction:column; gap:8px; }
+  .lp-item {
+    display:flex; align-items:center; gap:12px;
+    padding:8px 10px;
+    background:rgba(255,255,255,0.04);
+    border-left:3px solid #5a1818;
+    transition:background 0.2s;
+  }
+  .lp-item:hover { background:rgba(255,255,255,0.09); }
+  .lp-item.now-playing { border-left:3px solid #d4a030; background:rgba(212,160,48,0.07); }
+
+  .lp-cover-disc {
+    width:48px; height:48px; border-radius:50%; flex-shrink:0;
+    background:conic-gradient(#080808 0deg,#1a1a1a 30deg,#080808 60deg,#222 90deg,#080808 120deg,#1a1a1a 150deg,#080808 180deg,#222 210deg,#080808 240deg,#1a1a1a 270deg,#080808 300deg,#222 330deg,#080808 360deg);
+    border:3px solid #383838;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lp-cover-disc::after {
+    content:''; width:9px; height:9px; border-radius:50%;
+    background:#2a2a2a; border:2px solid #585858;
+  }
+  .lp-cover-disc.spinning { animation:spin 4s linear infinite; }
+
+  .lp-num { font-family:'Black Han Sans',sans-serif; font-size:11px; color:#886858; width:14px; flex-shrink:0; text-align:center; }
+  .lp-info { flex:1; min-width:0; }
+  .lp-album { font-family:'Black Han Sans',sans-serif; font-size:14px; color:#f0e0d8; letter-spacing:0.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lp-artist { font-size:14px; color:#b09080; margin-top:2px; }
+  .lp-now { font-size:11px; color:#d4a030; font-family:'Black Han Sans',sans-serif; padding:2px 6px; border:1px solid #d4a030; flex-shrink:0; animation:blink 1.5s step-end infinite; }
+
+  .lp-empty { text-align:center; color:#886858; font-size:17px; padding:20px 0; }
+
   /* ── 방명록 ── */
   .guestbook-section { max-width:620px; margin:0 auto 16px; padding:0 12px; }
   .gb-title { font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--dark); letter-spacing:1px; padding:12px 0 10px; border-bottom:var(--px) solid var(--dark); margin-bottom:12px; }
@@ -389,7 +441,10 @@
 
 <!-- 공지사항 -->
 <div class="notice-bar">
-  <div class="notice-content" id="noticeDisplay"></div>
+  <div class="notice-content" id="noticeDisplay">
+    <span class="notice-icon">📢</span>
+    <span class="notice-text" id="noticeText"></span>
+  </div>
 </div>
 
 <div class="legend">
@@ -519,6 +574,18 @@
   </div>
 </div>
 
+<!-- 오늘의 LP -->
+<div class="lp-section" id="lpSection">
+  <div class="lp-section-inner">
+    <div class="lp-section-header">
+      <div class="lp-spinning"></div>
+      <div class="lp-section-title">🎵 오늘의 LP</div>
+      <div class="lp-date" id="lpDate"></div>
+    </div>
+    <div class="lp-list" id="lpList"></div>
+  </div>
+</div>
+
 <!-- 방명록 -->
 <div class="guestbook-section">
   <div class="gb-title">📝 방명록</div>
@@ -531,6 +598,25 @@
 
 <!-- 어드민 패널 -->
 <div class="admin-panel">
+
+  <!-- 0. 오늘의 LP 관리 -->
+  <div class="admin-section">
+    <div class="admin-section-title">🎵 오늘의 LP 관리</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input id="lpAlbumInput" type="text" placeholder="앨범명 *" style="flex:1;border:2px solid var(--admin);padding:7px 10px;font-family:'Dongle',sans-serif;font-size:16px;background:#fffaf0;outline:none;">
+      <input id="lpArtistInput" type="text" placeholder="아티스트" style="flex:1;border:2px solid var(--admin);padding:7px 10px;font-family:'Dongle',sans-serif;font-size:16px;background:#fffaf0;outline:none;">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+      <label style="display:flex;align-items:center;gap:5px;font-size:15px;color:var(--dark);cursor:pointer;">
+        <input type="checkbox" id="lpNowPlaying" style="width:15px;height:15px;"> 지금 재생 중 표시
+      </label>
+      <button class="admin-btn" onclick="addLpItem()" style="margin-left:auto;">+ 추가</button>
+    </div>
+    <div id="adminLpList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    <div style="margin-top:10px;">
+      <button class="admin-btn danger" onclick="clearLpList()">오늘 목록 초기화</button>
+    </div>
+  </div>
 
   <!-- 1. 테이블 상태 관리 -->
   <div class="admin-section">
@@ -708,6 +794,7 @@
     renderAdminGrid();
     renderAdminEntries();
     renderLog();
+    renderAdminLp();
     const notice = localStorage.getItem('lo_notice') || '';
     document.getElementById('noticeInput').value = notice;
   }
@@ -748,8 +835,97 @@
   }
   function showNotice(text) {
     const el = document.getElementById('noticeDisplay');
-    if (text) { el.textContent = '📢 ' + text; el.classList.add('show'); }
-    else { el.textContent = ''; el.classList.remove('show'); }
+    const textEl = document.getElementById('noticeText');
+    if (text) { textEl.textContent = text; el.classList.add('show'); }
+    else { textEl.textContent = ''; el.classList.remove('show'); }
+  }
+
+  // ── 오늘의 LP ──
+  let lpItems = [];
+  try { lpItems = JSON.parse(localStorage.getItem('lo_lp') || '[]'); } catch(e) {}
+
+  function addLpItem() {
+    const album = document.getElementById('lpAlbumInput').value.trim();
+    const artist = document.getElementById('lpArtistInput').value.trim();
+    const nowPlaying = document.getElementById('lpNowPlaying').checked;
+    if (!album) { alert('앨범명을 입력해주세요'); return; }
+    if (nowPlaying) lpItems.forEach(i => i.nowPlaying = false);
+    lpItems.push({ album, artist, nowPlaying });
+    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
+    document.getElementById('lpAlbumInput').value = '';
+    document.getElementById('lpArtistInput').value = '';
+    document.getElementById('lpNowPlaying').checked = false;
+    renderLpFront();
+    renderAdminLp();
+  }
+
+  function deleteLpItem(idx) {
+    lpItems.splice(idx, 1);
+    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
+    renderLpFront();
+    renderAdminLp();
+  }
+
+  function setNowPlaying(idx) {
+    lpItems.forEach((item, i) => item.nowPlaying = (i === idx));
+    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
+    renderLpFront();
+    renderAdminLp();
+  }
+
+  function clearLpList() {
+    if (!confirm('오늘의 LP 목록을 초기화할까요?')) return;
+    lpItems = [];
+    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
+    renderLpFront();
+    renderAdminLp();
+  }
+
+  function makeDiscHTML(nowPlaying) {
+    return `<div class="lp-cover-disc${nowPlaying ? ' spinning' : ''}"></div>`;
+  }
+
+  function renderLpFront() {
+    const el = document.getElementById('lpList');
+    const dateEl = document.getElementById('lpDate');
+    if (!el) return;
+    const today = new Date().toLocaleDateString('ko-KR', {month:'long', day:'numeric', weekday:'short'});
+    if (dateEl) dateEl.textContent = today;
+    if (!lpItems.length) {
+      el.innerHTML = '<div class="lp-empty">🎶 오늘의 LP를 준비 중이에요</div>';
+      return;
+    }
+    el.innerHTML = lpItems.map((item, i) => `
+      <div class="lp-item${item.nowPlaying ? ' now-playing' : ''}">
+        <span class="lp-num">${i+1}</span>
+        ${makeDiscHTML(item.nowPlaying)}
+        <div class="lp-info">
+          <div class="lp-album">${item.album}</div>
+          ${item.artist ? `<div class="lp-artist">${item.artist}</div>` : ''}
+        </div>
+        ${item.nowPlaying ? '<span class="lp-now">▶ NOW</span>' : ''}
+      </div>`).join('');
+  }
+
+  function renderAdminLp() {
+    const el = document.getElementById('adminLpList');
+    if (!el) return;
+    if (!lpItems.length) {
+      el.innerHTML = '<div style="color:#888;font-size:15px;padding:8px 0;">아직 LP가 없어요. 위에서 추가해주세요!</div>';
+      return;
+    }
+    el.innerHTML = lpItems.map((item, i) => `
+      <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #b8c8d8;padding:7px 10px;box-shadow:2px 2px 0 #b8c8d8;">
+        <div style="width:32px;height:32px;border-radius:50%;background:conic-gradient(#080808 0deg,#1a1a1a 60deg,#080808 120deg,#222 180deg,#080808 240deg,#1a1a1a 300deg,#080808 360deg);border:2px solid #484848;flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Black Han Sans',sans-serif;font-size:13px;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.album}</div>
+          ${item.artist ? `<div style="font-size:13px;color:var(--wood2);">${item.artist}</div>` : ''}
+        </div>
+        ${item.nowPlaying
+          ? '<span style="font-size:11px;color:#d4a030;font-family:\'Black Han Sans\',sans-serif;border:1px solid #d4a030;padding:1px 5px;flex-shrink:0;">▶ NOW</span>'
+          : `<button class="admin-btn" style="font-size:11px;padding:3px 8px;flex-shrink:0;" onclick="setNowPlaying(${i})">재생중</button>`}
+        <button class="admin-btn danger" style="font-size:11px;padding:3px 8px;flex-shrink:0;" onclick="deleteLpItem(${i})">삭제</button>
+      </div>`).join('');
   }
 
   // ── 시간대 기록 ──
@@ -851,6 +1027,7 @@
   // ── 초기화 ──
   loadState();
   renderEntries();
+  renderLpFront();
   const savedNotice = localStorage.getItem('lo_notice') || '';
   if (savedNotice) showNotice(savedNotice);
 </script>
