@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lazy otter · 자리 있어요?</title>
+<link href="https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5edd8;
+    --wall: #ede5c8;
+    --wall2: #ddd5b0;
+    --wood: #8b5e3c;
+    --wood2: #6b3e1c;
+    --dark: #2c1a0e;
+    --lp-dark: #3a0808;
+    --av: #3a7a2a;
+    --av2: #2a5a1a;
+    --av-bg: #c8f0bc;
+    --fl: #c02818;
+    --fl2: #901808;
+    --fl-bg: #ffd8d0;
+    --px: 3px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    font-family: 'Dongle', sans-serif;
+    min-height: 100vh;
+    background-image:
+      linear-gradient(rgba(139,94,60,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,94,60,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* ── 헤더 ── */
+  .header { text-align:center; padding:22px 20px 6px; }
+  .logo {
+    display:inline-block; background:var(--dark); color:var(--bg);
+    font-family:'Black Han Sans',sans-serif;
+    font-size:20px; padding:5px 22px; letter-spacing:3px;
+    box-shadow:4px 4px 0 var(--wood2); margin-bottom:8px;
+  }
+  .page-title { font-family:'Black Han Sans',sans-serif; font-size:32px; color:var(--dark); letter-spacing:1px; }
+  .subtitle { font-size:20px; color:var(--wood); }
+
+  .legend { display:flex; justify-content:center; gap:20px; padding:8px 0 3px; }
+  .li { display:flex; align-items:center; gap:6px; font-size:18px; color:var(--dark); }
+  .ld { width:12px; height:12px; box-shadow:2px 2px 0 rgba(0,0,0,0.2); flex-shrink:0; }
+  .ld.av { background:var(--av); }
+  .ld.fl { background:var(--fl); }
+
+  .update-bar { text-align:center; font-size:17px; color:var(--wood); padding:2px 0 10px; }
+  .pulse { display:inline-block; width:8px; height:8px; background:var(--av); margin-right:5px; vertical-align:middle; animation:blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ── 도면 ── */
+  .cafe-wrapper { display:flex; justify-content:center; padding:0 12px 20px; }
+
+  .floor-plan {
+    position:relative;
+    width:620px; height:520px;
+    background:var(--wall);
+    border:var(--px) solid var(--dark);
+    box-shadow:6px 6px 0 var(--wood2);
+    overflow:hidden;
+    flex-shrink:0;
+  }
+
+  /* 원목 바닥 */
+  .floor-bg {
+    position:absolute; left:190px; top:0; right:0; bottom:0;
+    background:repeating-linear-gradient(90deg, #e8d898 0,#e8d898 42px,#dcc880 42px,#dcc880 44px);
+  }
+
+  /* ── 왼쪽 섹션 ── */
+  .left-section {
+    position:absolute; left:0; top:0;
+    width:190px; height:100%;
+    background:linear-gradient(180deg,#ddd858 0%,#c8c848 100%);
+    border-right:var(--px) solid var(--dark);
+    z-index:1;
+  }
+
+  .loft-badge {
+    position:absolute; left:8px; top:8px;
+    background:var(--dark); color:var(--bg);
+    font-family:'Black Han Sans',sans-serif;
+    font-size:10px; padding:3px 7px; letter-spacing:0.5px; line-height:1.5;
+    box-shadow:2px 2px 0 var(--wood2); z-index:3;
+  }
+
+  .loft-stairs {
+    position:absolute; left:8px; top:48px;
+    width:174px; height:26px;
+    background:repeating-linear-gradient(90deg,#b8b040 0,#b8b040 16px,#989030 16px,#989030 18px);
+    border:var(--px) solid var(--dark);
+    display:flex; align-items:center; justify-content:center; z-index:3;
+  }
+  .stairs-label { font-size:15px; color:var(--dark); }
+
+  .secret-room {
+    position:absolute; left:8px; top:84px;
+    width:174px;
+    background:rgba(210,192,145,0.72);
+    border:var(--px) solid var(--dark);
+    padding:8px; z-index:2;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .room-title { font-size:17px; color:var(--dark); text-align:center; border-bottom:1px dashed var(--wood); padding-bottom:4px; }
+
+  /* 바 테이블 바1/바2/바3 */
+  .bar-table-wrap { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .bar-table-label { font-size:13px; color:var(--wood2); font-family:'Black Han Sans',sans-serif; letter-spacing:1px; margin-bottom:1px; }
+  .bar-seats { display:flex; flex-direction:column; gap:4px; }
+
+  .bar-seat { cursor:pointer; transition:transform 0.1s; }
+  .bar-seat:hover { transform:translateX(2px); }
+
+  .seat-box {
+    width:158px; height:30px;
+    border:2px solid var(--dark);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 8px;
+    transition:background 0.3s;
+    box-shadow:2px 2px 0 var(--dark);
+  }
+  .seat-box.av { background:var(--av-bg); box-shadow:2px 2px 0 var(--av2); border-color:var(--av); }
+  .seat-box.fl { background:var(--fl-bg); box-shadow:2px 2px 0 var(--fl2); border-color:var(--fl); }
+
+  .seat-info { display:flex; align-items:center; gap:5px; }
+  .seat-num { font-family:'Black Han Sans',sans-serif; font-size:12px; color:var(--dark); }
+  .seat-person { font-size:13px; color:var(--wood2); }
+  .seat-status { font-family:'Black Han Sans',sans-serif; font-size:10px; padding:1px 5px; border:1px solid var(--dark); box-shadow:1px 1px 0 var(--dark); }
+  .seat-box.av .seat-status { background:var(--av); color:#fff; }
+  .seat-box.fl .seat-status { background:var(--fl); color:#fff; }
+
+  .room-table-wrap { display:flex; flex-direction:column; align-items:flex-end; }
+  .room-table-label { font-size:13px; color:var(--wood2); font-family:'Black Han Sans',sans-serif; letter-spacing:1px; margin-bottom:3px; }
+  .sm-table { cursor:pointer; }
+  .sm-table:hover .tb { transform:translateY(-2px); filter:brightness(1.05); }
+
+  /* ── LP 서재 ── */
+  .lp-shelf {
+    position:absolute; left:190px; top:0;
+    width:78px; height:370px;
+    background:var(--lp-dark);
+    border-right:var(--px) solid var(--dark);
+    border-bottom:var(--px) solid var(--dark);
+    z-index:3;
+    display:flex; flex-direction:column; align-items:center;
+    padding:10px 6px; gap:3px;
+    box-shadow:4px 0 0 #2a0404;
+  }
+  .lp-title { font-family:'Black Han Sans',sans-serif; font-size:13px; color:#f0c8c0; letter-spacing:1px; text-align:center; margin-bottom:4px; }
+  .lp-stack { display:flex; flex-direction:column; gap:2px; width:62px; }
+  .lp-record { height:8px; background:linear-gradient(90deg,#060606 0%,#181818 30%,#0a0a0a 60%,#1e1e1e 100%); border:1px solid #2a2a2a; }
+  .lp-disc-wrap { margin-top:8px; display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .lp-disc {
+    width:42px; height:42px; border-radius:50%;
+    background:conic-gradient(#060606 0deg,#161616 45deg,#060606 90deg,#1e1e1e 135deg,#060606 180deg,#161616 225deg,#060606 270deg,#1e1e1e 315deg,#060606 360deg);
+    border:3px solid #383838; box-shadow:2px 2px 0 #000;
+    animation:spin 4s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .lp-disc-label { font-size:13px; color:#b09080; letter-spacing:1px; }
+
+  /* ── 테이블 공통 ── */
+  .table { position:absolute; cursor:pointer; z-index:5; }
+  .table:hover .tb { transform:translateY(-2px); filter:brightness(1.05); }
+  .tb {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border:var(--px) solid var(--dark); position:relative;
+    transition:background 0.3s, transform 0.15s;
+  }
+  .tb-name { font-family:'Black Han Sans',sans-serif; font-size:13px; color:var(--dark); text-align:center; line-height:1.2; }
+  .tb-seats { font-size:15px; color:var(--wood2); margin-top:1px; }
+  .status {
+    position:absolute; top:-11px; right:-8px;
+    font-family:'Black Han Sans',sans-serif; font-size:10px;
+    padding:2px 5px; border:1px solid var(--dark);
+    box-shadow:1px 1px 0 var(--dark); letter-spacing:0.5px;
+  }
+  .tb.av { background:var(--av-bg); box-shadow:4px 4px 0 var(--av2); }
+  .tb.av .status { background:var(--av); color:#fff; }
+  .tb.fl { background:var(--fl-bg); box-shadow:4px 4px 0 var(--fl2); }
+  .tb.fl .status { background:var(--fl); color:#fff; }
+
+  /* 테이블 위치 */
+  #t1 { left:282px; top:24px; } #t1 .tb { width:122px; height:56px; }
+  #t2 { right:22px; top:24px; } #t2 .tb { width:104px; height:52px; }
+  #t3 { right:22px; top:108px; } #t3 .tb { width:122px; height:56px; }
+  #t4 { left:308px; top:188px; } #t4 .tb { width:98px; height:98px; border-radius:50%; }
+  #t5 { left:210px; top:318px; } #t5 .tb { width:58px; height:88px; }
+
+  /* ── 턴테이블 ── */
+  .turntable {
+    position:absolute; right:22px; top:242px;
+    width:56px; height:74px;
+    background:#111; border:var(--px) solid var(--dark);
+    box-shadow:4px 4px 0 #000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    z-index:4;
+  }
+  .tt-disc {
+    width:34px; height:34px; border-radius:50%;
+    background:conic-gradient(#040404 0deg,#141414 45deg,#040404 90deg,#1c1c1c 135deg,#040404 180deg,#141414 225deg,#040404 270deg,#1c1c1c 315deg,#040404 360deg);
+    border:3px solid #3a3a3a; animation:spin 3s linear infinite;
+  }
+  .tt-label { font-size:13px; color:#666; }
+
+  /* ── 식물 (턴테이블 바로 왼쪽) ── */
+  .plant { position:absolute; z-index:4; display:flex; flex-direction:column; align-items:center; }
+  .plant-pot { background:var(--wood); border:1px solid var(--wood2); border-radius:0 0 4px 4px; margin-top:-2px; }
+
+  /* ── 카운터 구조
+       [손님 - 정면]   position: bottom이 높은 쪽 (화면 위)
+       [카운터]
+       [주인 - 뒷모습] position: bottom이 낮은 쪽 (화면 아래)
+  ── */
+
+  /* 주인: 카운터 아래 (화면 하단, 뒷모습) */
+  .owner-wrap {
+    position:absolute; right:22px; bottom:8px;
+    z-index:4;
+    display:flex; flex-direction:column; align-items:center;
+    gap:0;
+  }
+  /* 카운터 */
+  .counter {
+    width:148px; height:44px;
+    background:var(--wood); border:var(--px) solid var(--dark);
+    box-shadow:4px 4px 0 var(--wood2);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .counter-label { font-family:'Black Han Sans',sans-serif; font-size:15px; color:var(--bg); letter-spacing:1px; }
+
+  /* 손님: 카운터 위 (화면 상단, 정면) */
+  .guest-wrap {
+    position:absolute; right:82px; bottom:96px;
+    z-index:6;
+  }
+  .guest-char { width:30px; height:44px; display:block; }
+  .owner-char { width:38px; height:54px; display:block; margin-bottom:-2px; }
+
+  /* ── 화장실 / 문 ── */
+  .bathroom {
+    position:absolute; left:272px; bottom:16px;
+    width:92px; height:36px;
+    background:#d8cca8; border:var(--px) solid var(--dark);
+    box-shadow:2px 2px 0 var(--wood2);
+    display:flex; align-items:center; justify-content:center; z-index:4;
+  }
+  .bathroom-label { font-size:17px; color:var(--dark); }
+
+  .entrance {
+    position:absolute; left:200px; bottom:16px;
+    width:64px; height:36px;
+    background:var(--wood2); border:var(--px) solid var(--dark);
+    box-shadow:2px 2px 0 #000;
+    display:flex; align-items:center; justify-content:center; z-index:4;
+  }
+  .entrance-label { font-family:'Black Han Sans',sans-serif; font-size:15px; color:var(--bg); }
+
+  /* ── 툴팁 ── */
+  .tooltip {
+    position:fixed; background:var(--dark); color:var(--bg);
+    padding:6px 14px; font-family:'Black Han Sans',sans-serif; font-size:14px;
+    pointer-events:none; z-index:999; opacity:0; transition:opacity 0.15s;
+    white-space:nowrap; box-shadow:3px 3px 0 var(--wood2); border:1px solid var(--wood2);
+  }
+  .tooltip.show { opacity:1; }
+
+  /* ── 방명록 ── */
+  .guestbook-section { max-width:620px; margin:0 auto 32px; padding:0 12px; }
+  .gb-title { font-family:'Black Han Sans',sans-serif; font-size:22px; color:var(--dark); letter-spacing:1px; padding:12px 0 10px; border-bottom:var(--px) solid var(--dark); margin-bottom:12px; }
+  .gb-input-wrap { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .gb-input-wrap textarea {
+    width:100%; height:76px; border:var(--px) solid var(--dark); padding:10px;
+    font-family:'Dongle',sans-serif; font-size:18px; color:var(--dark); background:#fffaf0;
+    resize:none; outline:none; box-shadow:inset 2px 2px 0 rgba(0,0,0,0.08);
+  }
+  .gb-submit {
+    align-self:flex-end; padding:8px 24px;
+    background:var(--dark); color:var(--bg);
+    font-family:'Black Han Sans',sans-serif; font-size:15px;
+    border:none; cursor:pointer; box-shadow:3px 3px 0 var(--wood2); letter-spacing:1px;
+    transition:transform 0.1s, box-shadow 0.1s;
+  }
+  .gb-submit:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--wood2); }
+  .gb-submit:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--wood2); }
+  .entries { display:flex; flex-direction:column; gap:10px; }
+  .entry { background:#fffaf0; border:2px solid var(--wall2); padding:10px 14px; box-shadow:3px 3px 0 var(--wall2); position:relative; }
+  .entry::before { content:'✏️'; position:absolute; top:8px; right:10px; font-size:14px; opacity:0.4; }
+  .entry-text { font-size:18px; color:var(--dark); line-height:1.5; }
+  .entry-date { font-size:14px; color:var(--wood); margin-top:3px; }
+  .no-entries { text-align:center; color:var(--wood); font-size:18px; padding:20px; }
+
+  /* ════════════════════════
+     모바일 반응형
+  ════════════════════════ */
+  @media (max-width: 639px) {
+    .cafe-wrapper { padding:0 0 16px; overflow-x:auto; }
+
+    .floor-plan { width:100%; height:auto; min-height:480px; border-left:none; border-right:none; border-radius:0; box-shadow:0 4px 0 var(--wood2); }
+
+    /* 왼쪽 섹션 */
+    .left-section { width:150px; }
+    .loft-stairs { width:134px; }
+    .secret-room { width:134px; }
+    .seat-box { width:120px; }
+    .sm-table .tb { width:108px !important; }
+
+    /* LP 서재 */
+    .lp-shelf { left:150px; width:62px; height:310px; }
+    .lp-stack { width:50px; }
+    .lp-disc { width:34px; height:34px; }
+
+    /* 테이블 위치 조정 */
+    #t1 { left:224px; top:20px; } #t1 .tb { width:106px; height:50px; }
+    #t2 { right:10px; top:20px; } #t2 .tb { width:90px; height:46px; }
+    #t3 { right:10px; top:98px; } #t3 .tb { width:106px; height:50px; }
+    #t4 { left:240px; top:175px; } #t4 .tb { width:86px; height:86px; }
+    #t5 { left:160px; top:295px; } #t5 .tb { width:52px; height:78px; }
+
+    /* 턴테이블 */
+    .turntable { right:10px; top:228px; width:48px; height:64px; }
+    .tt-disc { width:28px; height:28px; }
+
+    /* 식물 숨김 (공간 부족) */
+    .plant { display:none; }
+
+    /* 카운터 */
+    .owner-wrap { right:10px; bottom:6px; }
+    .counter { width:120px; height:38px; }
+    .counter-label { font-size:13px; }
+    .owner-char { width:30px; height:44px; }
+
+    .guest-wrap { right:66px; bottom:84px; }
+    .guest-char { width:24px; height:36px; }
+
+    /* 하단 */
+    .bathroom { left:214px; bottom:12px; width:78px; height:32px; }
+    .bathroom-label { font-size:15px; }
+    .entrance { left:152px; bottom:12px; width:56px; height:32px; }
+    .entrance-label { font-size:13px; }
+
+    .guestbook-section { padding:0 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🦦 lazy otter</div>
+  <div class="page-title">지금 자리 있어요?</div>
+  <div class="subtitle">실시간 좌석 현황 · 연신내역</div>
+</div>
+
+<div class="legend">
+  <div class="li"><div class="ld av"></div><span>여유있음</span></div>
+  <div class="li"><div class="ld fl"></div><span>만석</span></div>
+</div>
+<div class="update-bar"><span class="pulse"></span>실시간 업데이트 중</div>
+
+<div class="cafe-wrapper">
+  <div class="floor-plan">
+    <div class="floor-bg"></div>
+
+    <!-- ── 왼쪽 섹션 ── -->
+    <div class="left-section">
+      <div class="loft-badge">🔒 2층 다락<br>(staff only)</div>
+      <div class="loft-stairs"><div class="stairs-label">▲ 다락계단</div></div>
+
+      <div class="secret-room">
+        <div class="room-title">🚪 작은 방</div>
+
+        <!-- 바 테이블 (바1/바2/바3 각 1인) -->
+        <div class="bar-table-wrap">
+          <div class="bar-table-label">바 테이블</div>
+          <div class="bar-seats">
+            <div class="bar-seat" id="bar1" onclick="onBarClick('bar1')">
+              <div class="seat-box av">
+                <div class="seat-info"><span class="seat-num">바1</span><span class="seat-person">· 1인</span></div>
+                <div class="seat-status">여유</div>
+              </div>
+            </div>
+            <div class="bar-seat" id="bar2" onclick="onBarClick('bar2')">
+              <div class="seat-box av">
+                <div class="seat-info"><span class="seat-num">바2</span><span class="seat-person">· 1인</span></div>
+                <div class="seat-status">여유</div>
+              </div>
+            </div>
+            <div class="bar-seat" id="bar3" onclick="onBarClick('bar3')">
+              <div class="seat-box fl">
+                <div class="seat-info"><span class="seat-num">바3</span><span class="seat-person">· 1인</span></div>
+                <div class="seat-status">만석</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 테이블 (오른쪽 정렬) -->
+        <div class="room-table-wrap">
+          <div class="room-table-label">테이블</div>
+          <div class="sm-table" id="tsecret" onclick="onTableClick(event,'tsecret')">
+            <div class="tb av" style="width:140px;height:54px;">
+              <div class="tb-name">테이블</div>
+              <div class="tb-seats">🪑 2인</div>
+              <div class="status">여유</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LP 서재 ── -->
+    <div class="lp-shelf">
+      <div class="lp-title">LP<br>서재</div>
+      <div class="lp-stack">
+        <div class="lp-record"></div><div class="lp-record"></div><div class="lp-record"></div>
+        <div class="lp-record"></div><div class="lp-record"></div><div class="lp-record"></div>
+        <div class="lp-record"></div><div class="lp-record"></div><div class="lp-record"></div>
+        <div class="lp-record"></div><div class="lp-record"></div><div class="lp-record"></div>
+      </div>
+      <div class="lp-disc-wrap">
+        <div class="lp-disc"></div>
+        <div class="lp-disc-label">NOW PLAYING</div>
+      </div>
+    </div>
+
+    <!-- ── 테이블 1~5 ── -->
+    <div class="table" id="t1" onclick="onTableClick(event,'t1')">
+      <div class="tb av"><div class="tb-name">테이블 1</div><div class="tb-seats">🪑 4인</div><div class="status">여유</div></div>
+    </div>
+    <div class="table" id="t2" onclick="onTableClick(event,'t2')">
+      <div class="tb fl"><div class="tb-name">테이블 2</div><div class="tb-seats">🪑 2인</div><div class="status">만석</div></div>
+    </div>
+    <div class="table" id="t3" onclick="onTableClick(event,'t3')">
+      <div class="tb av"><div class="tb-name">테이블 3</div><div class="tb-seats">🪑 4인</div><div class="status">여유</div></div>
+    </div>
+    <div class="table" id="t4" onclick="onTableClick(event,'t4')">
+      <div class="tb fl"><div class="tb-name">테이블<br>4</div><div class="tb-seats">🪑 4인</div><div class="status">만석</div></div>
+    </div>
+    <div class="table" id="t5" onclick="onTableClick(event,'t5')">
+      <div class="tb av"><div class="tb-name">테이블<br>5</div><div class="tb-seats">🪑 2인</div><div class="status">여유</div></div>
+    </div>
+
+    <!-- ── 턴테이블 ── -->
+    <div class="turntable">
+      <div class="tt-disc"></div>
+      <div class="tt-label">TURN</div>
+    </div>
+
+    <!-- ── 식물 (턴테이블 바로 왼쪽) ── -->
+    <div class="plant" style="right:82px; top:244px;">
+      <div style="font-size:24px;line-height:1;">🪴</div>
+      <div class="plant-pot" style="width:15px;height:9px;"></div>
+    </div>
+    <div class="plant" style="right:108px; top:260px;">
+      <div style="font-size:19px;line-height:1;">🌿</div>
+      <div class="plant-pot" style="width:12px;height:7px;"></div>
+    </div>
+    <div class="plant" style="right:84px; top:278px;">
+      <div style="font-size:14px;line-height:1;">🌱</div>
+      <div class="plant-pot" style="width:10px;height:6px;"></div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         카운터 구조:
+           [손님 - 정면]   ← guest-wrap (위)
+           [카운터]        ← owner-wrap 안의 카운터
+           [주인 - 뒷모습] ← owner-wrap 안의 캐릭터 (아래)
+    ══════════════════════════════════ -->
+
+    <!-- 손님 (카운터 위, 테이블 방향 정면) -->
+    <div class="guest-wrap">
+      <svg class="guest-char" viewBox="0 0 14 20" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <rect x="3" y="0" width="8" height="2" fill="#6b4a28"/>
+        <rect x="2" y="1" width="10" height="4" fill="#6b4a28"/>
+        <rect x="3" y="2" width="8" height="6" fill="#f5c8a0"/>
+        <rect x="4" y="4" width="2" height="2" fill="#2c1a0e"/>
+        <rect x="8" y="4" width="2" height="2" fill="#2c1a0e"/>
+        <rect x="3" y="6" width="2" height="1" fill="#f0a0a0" opacity="0.6"/>
+        <rect x="9" y="6" width="2" height="1" fill="#f0a0a0" opacity="0.6"/>
+        <rect x="5" y="7" width="4" height="1" fill="#c07060"/>
+        <rect x="3" y="8" width="8" height="7" fill="#7a9a60"/>
+        <rect x="1" y="9" width="2" height="4" fill="#7a9a60"/>
+        <rect x="11" y="9" width="2" height="4" fill="#7a9a60"/>
+        <rect x="1" y="13" width="2" height="1" fill="#f5c8a0"/>
+        <rect x="11" y="13" width="2" height="1" fill="#f5c8a0"/>
+        <rect x="4" y="15" width="2" height="4" fill="#4a5a8a"/>
+        <rect x="8" y="15" width="2" height="4" fill="#4a5a8a"/>
+        <rect x="3" y="18" width="3" height="2" fill="#2c1a0e"/>
+        <rect x="8" y="18" width="3" height="2" fill="#2c1a0e"/>
+      </svg>
+    </div>
+
+    <!-- 카운터 + 주인 (카운터 아래, 뒷모습) -->
+    <div class="owner-wrap">
+      <div class="counter"><div class="counter-label">☕ 카운터</div></div>
+      <!-- 주인: 카운터 바로 아래, 등 보이는 후면 -->
+      <svg class="owner-char" viewBox="0 0 18 26" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <!-- 뒤통수 머리카락 -->
+        <rect x="2" y="0" width="14" height="2" fill="#2c1a0e"/>
+        <rect x="2" y="1" width="14" height="7" fill="#2c1a0e"/>
+        <rect x="3" y="8" width="2" height="2" fill="#2c1a0e"/>
+        <rect x="13" y="8" width="2" height="2" fill="#2c1a0e"/>
+        <!-- 뒤통수 피부 -->
+        <rect x="4" y="2" width="10" height="7" fill="#f5c8a0"/>
+        <!-- 목 -->
+        <rect x="7" y="9" width="4" height="1" fill="#f5c8a0"/>
+        <!-- 등 (앞치마 뒷면) -->
+        <rect x="4" y="10" width="10" height="10" fill="#d4a8c8"/>
+        <!-- 앞치마 끈 X자 (뒤에서) -->
+        <rect x="6" y="10" width="1" height="1" fill="#f0d8e8"/>
+        <rect x="7" y="11" width="1" height="1" fill="#f0d8e8"/>
+        <rect x="8" y="12" width="2" height="1" fill="#f0d8e8"/>
+        <rect x="10" y="11" width="1" height="1" fill="#f0d8e8"/>
+        <rect x="11" y="10" width="1" height="1" fill="#f0d8e8"/>
+        <!-- 팔 -->
+        <rect x="2" y="11" width="2" height="6" fill="#d4a8c8"/>
+        <rect x="14" y="11" width="2" height="6" fill="#d4a8c8"/>
+        <!-- 손 -->
+        <rect x="2" y="17" width="2" height="2" fill="#f5c8a0"/>
+        <rect x="14" y="17" width="2" height="2" fill="#f5c8a0"/>
+        <!-- 다리 -->
+        <rect x="5" y="20" width="3" height="4" fill="#b090c0"/>
+        <rect x="10" y="20" width="3" height="4" fill="#b090c0"/>
+        <!-- 신발 -->
+        <rect x="4" y="23" width="4" height="2" fill="#2c1a0e"/>
+        <rect x="10" y="23" width="4" height="2" fill="#2c1a0e"/>
+      </svg>
+    </div>
+
+    <!-- ── 화장실 / 문 ── -->
+    <div class="bathroom"><div class="bathroom-label">🚻 화장실</div></div>
+    <div class="entrance"><div class="entrance-label">🚪 문</div></div>
+
+  </div>
+</div>
+
+<!-- ── 방명록 ── -->
+<div class="guestbook-section">
+  <div class="gb-title">📝 방명록</div>
+  <div class="gb-input-wrap">
+    <textarea id="guestInput" placeholder="한마디 남겨주세요 ☕  칭찬이든 피드백이든 환영해요!"></textarea>
+    <button class="gb-submit" onclick="submitEntry()">남기기 →</button>
+  </div>
+  <div class="entries" id="entriesList"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+  const META = {
+    t1:{name:'테이블 1',seats:4}, t2:{name:'테이블 2',seats:2},
+    t3:{name:'테이블 3',seats:4}, t4:{name:'테이블 4',seats:4},
+    t5:{name:'테이블 5',seats:2},
+    tsecret:{name:'테이블 (작은방)',seats:2},
+    bar1:{name:'바1'}, bar2:{name:'바2'}, bar3:{name:'바3'},
+  };
+  const tooltip = document.getElementById('tooltip');
+
+  function showTooltip(text, rect) {
+    tooltip.textContent = text;
+    tooltip.style.left = Math.max(8, rect.left + rect.width/2 - 90) + 'px';
+    tooltip.style.top = (rect.top - 42 + window.scrollY) + 'px';
+    tooltip.classList.add('show');
+    setTimeout(() => tooltip.classList.remove('show'), 2000);
+  }
+
+  function onTableClick(e, id) {
+    const el = document.getElementById(id);
+    const body = el.querySelector('.tb');
+    const isFull = body.classList.contains('fl');
+    const m = META[id];
+    showTooltip(
+      isFull ? `${m.name} — 🔴 만석이에요` : `${m.name} — 🟢 자리 있어요! (${m.seats}인석)`,
+      el.getBoundingClientRect()
+    );
+  }
+
+  function onBarClick(id) {
+    const el = document.getElementById(id);
+    const box = el.querySelector('.seat-box');
+    const isFull = box.classList.contains('fl');
+    const m = META[id];
+    showTooltip(
+      isFull ? `${m.name} — 🔴 사용 중이에요` : `${m.name} — 🟢 비어있어요!`,
+      el.getBoundingClientRect()
+    );
+  }
+
+  let entries = [];
+  try { entries = JSON.parse(localStorage.getItem('lazy_otter_gb') || '[]'); } catch(e) {}
+
+  function submitEntry() {
+    const text = document.getElementById('guestInput').value.trim();
+    if (!text) return;
+    const now = new Date();
+    entries.unshift({ text, date: now.toLocaleDateString('ko-KR') + ' ' + now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) });
+    try { localStorage.setItem('lazy_otter_gb', JSON.stringify(entries)); } catch(e) {}
+    document.getElementById('guestInput').value = '';
+    renderEntries();
+  }
+
+  function renderEntries() {
+    const list = document.getElementById('entriesList');
+    if (!entries.length) {
+      list.innerHTML = '<div class="no-entries">아직 방명록이 없어요 🌿<br>첫 번째 글을 남겨주세요!</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => `
+      <div class="entry">
+        <div class="entry-text">${e.text}</div>
+        <div class="entry-date">${e.date}</div>
+      </div>`).join('');
+  }
+
+  renderEntries();
+</script>
+</body>
+</html>
