@@ -397,29 +397,21 @@
 
   /* 모바일 반응형 */
   @media (max-width:639px) {
-    .cafe-wrapper { padding:0 0 16px; overflow-x:auto; }
-    .floor-plan { width:100%; min-height:480px; border-left:none; border-right:none; border-radius:0; }
-    .left-section { width:150px; }
-    .loft-stairs { width:134px; }
-    .secret-room { width:134px; }
-    .seat-box { width:120px; }
-    .sm-table .tb { width:108px !important; }
-    .lp-shelf { left:150px; width:62px; height:310px; }
-    .lp-stack { width:50px; } .lp-disc { width:34px; height:34px; }
-    #t1 { left:224px; top:20px; } #t1 .tb { width:106px; height:50px; }
-    #t2 { right:10px; top:20px; } #t2 .tb { width:90px; height:46px; }
-    #t3 { right:10px; top:98px; } #t3 .tb { width:106px; height:50px; }
-    #t4 { left:240px; top:175px; } #t4 .tb { width:86px; height:86px; }
-    #t5 { left:160px; top:295px; } #t5 .tb { width:52px; height:78px; }
-    .turntable { right:10px; top:228px; width:48px; height:64px; }
-    .tt-disc { width:28px; height:28px; }
-    .plant { display:none; }
-    .owner-wrap { right:10px; bottom:6px; }
-    .counter { width:120px; height:38px; } .counter-label { font-size:13px; }
-    .owner-char { width:30px; height:44px; }
-    .guest-wrap { right:66px; bottom:84px; } .guest-char { width:24px; height:36px; }
-    .bathroom { left:214px; bottom:12px; width:78px; height:32px; }
-    .entrance { left:152px; bottom:12px; width:56px; height:32px; }
+    .cafe-wrapper {
+      padding:0 0 16px;
+      overflow-x:hidden;
+      display:flex;
+      justify-content:center;
+    }
+    .floor-plan-scaler {
+      transform-origin: top center;
+      transform: scale(var(--fp-scale, 1));
+      margin-bottom: calc((520px * (var(--fp-scale, 1) - 1)));
+    }
+    .floor-plan {
+      width:620px; height:520px;
+      border-left:none; border-right:none;
+    }
     .table-grid { grid-template-columns:1fr; }
   }
 </style>
@@ -455,6 +447,7 @@
 
 <!-- 도면 -->
 <div class="cafe-wrapper">
+  <div class="floor-plan-scaler" id="floorScaler">
   <div class="floor-plan">
     <div class="floor-bg"></div>
 
@@ -572,6 +565,7 @@
     <div class="bathroom"><div class="bathroom-label">🚻 화장실</div></div>
     <div class="entrance"><div class="entrance-label">🚪 문</div></div>
   </div>
+  </div><!-- /floor-plan-scaler -->
 </div>
 
 <!-- 오늘의 LP -->
@@ -1049,6 +1043,24 @@
       </div>`).join('');
   }
 
+  // ── 모바일 도면 스케일 ──
+  function applyFloorScale() {
+    const scaler = document.getElementById('floorScaler');
+    if (!scaler) return;
+    const vw = window.innerWidth;
+    if (vw >= 640) {
+      scaler.style.removeProperty('transform');
+      scaler.style.removeProperty('margin-bottom');
+      return;
+    }
+    const scale = Math.min(1, (vw - 24) / 620);
+    scaler.style.transform = `scale(${scale})`;
+    scaler.style.transformOrigin = 'top center';
+    scaler.style.marginBottom = `${(520 * (scale - 1))}px`;
+  }
+  applyFloorScale();
+  window.addEventListener('resize', applyFloorScale);
+
   // ── 초기화 ──
   initSeats();
   initNotice();
@@ -1075,7 +1087,7 @@
   window.submitEntry = submitEntry;
   window.deleteEntry = deleteEntry;
   window.clearAllEntries = clearAllEntries;
-  window.renderAdminGrid = renderAdminGrid;
+  window.applyFloorScale = applyFloorScale;
 </script>
 </body>
 </html>
