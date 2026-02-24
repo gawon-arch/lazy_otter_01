@@ -673,7 +673,24 @@
 
 <div class="tooltip" id="tooltip"></div>
 
-<script>
+<!-- Firebase CDN -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, get, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // ── Firebase 설정 ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyBaZmqtsOB5ZJ8JUXV4NWRxruEEu_6dOEw",
+    authDomain: "lazy-otter-test.firebaseapp.com",
+    databaseURL: "https://lazy-otter-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "lazy-otter-test",
+    storageBucket: "lazy-otter-test.firebasestorage.app",
+    messagingSenderId: "1036140429986",
+    appId: "1:1036140429986:web:ab7bf4b3ec078c78f20dfb"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
   const ADMIN_PIN = '1234'; // ← 여기서 PIN 변경
 
   const META = {
@@ -687,13 +704,14 @@
   let isAdmin = false;
   const tooltip = document.getElementById('tooltip');
 
-  // ── 상태 로드/저장 ──
-  function loadState() {
-    const saved = localStorage.getItem('lo_seats');
-    if (!saved) return;
-    const state = JSON.parse(saved);
-    Object.entries(state).forEach(([id, full]) => {
-      setTableState(id, full, false);
+  // ── 좌석 상태: Firebase 실시간 리스너 ──
+  function initSeats() {
+    onValue(ref(db, 'seats'), (snapshot) => {
+      const state = snapshot.val() || {};
+      Object.keys(META).forEach(id => {
+        setTableState(id, state[id] === true, false);
+      });
+      if (isAdmin) renderAdminGrid();
     });
   }
 
@@ -705,7 +723,7 @@
       const box = el.querySelector('.tb,.seat-box');
       state[id] = box ? box.classList.contains('fl') : false;
     });
-    localStorage.setItem('lo_seats', JSON.stringify(state));
+    set(ref(db, 'seats'), state);
   }
 
   // ── 테이블 상태 변경 ──
@@ -793,10 +811,11 @@
     document.body.classList.add('admin-mode');
     renderAdminGrid();
     renderAdminEntries();
-    renderLog();
+    get(ref(db, 'logs')).then(s => renderLog(s.val()));
     renderAdminLp();
-    const notice = localStorage.getItem('lo_notice') || '';
-    document.getElementById('noticeInput').value = notice;
+    get(ref(db, 'notice')).then(s => {
+      document.getElementById('noticeInput').value = s.val() || '';
+    });
   }
 
   function exitAdmin() {
@@ -822,16 +841,16 @@
   }
 
   // ── 공지사항 ──
+  function initNotice() {
+    onValue(ref(db, 'notice'), (s) => showNotice(s.val() || ''));
+  }
   function saveNotice() {
     const text = document.getElementById('noticeInput').value.trim();
-    localStorage.setItem('lo_notice', text);
-    showNotice(text);
-    alert('공지가 저장됐어요 📢');
+    set(ref(db, 'notice'), text).then(() => alert('공지가 저장됐어요 📢'));
   }
   function clearNotice() {
-    localStorage.removeItem('lo_notice');
+    set(ref(db, 'notice'), '');
     document.getElementById('noticeInput').value = '';
-    showNotice('');
   }
   function showNotice(text) {
     const el = document.getElementById('noticeDisplay');
@@ -842,7 +861,18 @@
 
   // ── 오늘의 LP ──
   let lpItems = [];
-  try { lpItems = JSON.parse(localStorage.getItem('lo_lp') || '[]'); } catch(e) {}
+
+  function initLp() {
+    onValue(ref(db, 'lp'), (s) => {
+      lpItems = s.val() ? Object.values(s.val()) : [];
+      renderLpFront();
+      if (isAdmin) renderAdminLp();
+    });
+  }
+
+  function saveLp() {
+    set(ref(db, 'lp'), lpItems.length ? lpItems : null);
+  }
 
   function addLpItem() {
     const album = document.getElementById('lpAlbumInput').value.trim();
@@ -851,34 +881,26 @@
     if (!album) { alert('앨범명을 입력해주세요'); return; }
     if (nowPlaying) lpItems.forEach(i => i.nowPlaying = false);
     lpItems.push({ album, artist, nowPlaying });
-    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
+    saveLp();
     document.getElementById('lpAlbumInput').value = '';
     document.getElementById('lpArtistInput').value = '';
     document.getElementById('lpNowPlaying').checked = false;
-    renderLpFront();
-    renderAdminLp();
   }
 
   function deleteLpItem(idx) {
     lpItems.splice(idx, 1);
-    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
-    renderLpFront();
-    renderAdminLp();
+    saveLp();
   }
 
   function setNowPlaying(idx) {
     lpItems.forEach((item, i) => item.nowPlaying = (i === idx));
-    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
-    renderLpFront();
-    renderAdminLp();
+    saveLp();
   }
 
   function clearLpList() {
     if (!confirm('오늘의 LP 목록을 초기화할까요?')) return;
     lpItems = [];
-    localStorage.setItem('lo_lp', JSON.stringify(lpItems));
-    renderLpFront();
-    renderAdminLp();
+    saveLp();
   }
 
   function makeDiscHTML(nowPlaying) {
@@ -930,7 +952,6 @@
 
   // ── 시간대 기록 ──
   function logSnapshot() {
-    const logs = JSON.parse(localStorage.getItem('lo_logs') || '[]');
     const now = new Date();
     const timeStr = now.toLocaleDateString('ko-KR') + ' ' + now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
     const snapshot = {};
@@ -943,24 +964,26 @@
     });
     const fullCount = Object.values(snapshot).filter(Boolean).length;
     const total = Object.keys(META).length;
-    logs.unshift({ time: timeStr, snapshot, fullCount, total });
-    if (logs.length > 100) logs.pop();
-    localStorage.setItem('lo_logs', JSON.stringify(logs));
-    renderLog();
+    push(ref(db, 'logs'), { time: timeStr, snapshot, fullCount, total });
     alert(`기록됐어요! (${fullCount}/${total} 만석)`);
   }
 
   function clearLog() {
     if (!confirm('기록을 모두 삭제할까요?')) return;
-    localStorage.removeItem('lo_logs');
-    renderLog();
+    set(ref(db, 'logs'), null);
   }
 
-  function renderLog() {
-    const logs = JSON.parse(localStorage.getItem('lo_logs') || '[]');
+  function initLogs() {
+    onValue(ref(db, 'logs'), (s) => {
+      if (isAdmin) renderLog(s.val());
+    });
+  }
+
+  function renderLog(data) {
     const el = document.getElementById('logList');
     if (!el) return;
-    if (!logs.length) { el.innerHTML = '<div class="log-empty">아직 기록이 없어요<br>현황 기록 버튼을 눌러주세요 📍</div>'; return; }
+    if (!data) { el.innerHTML = '<div class="log-empty">아직 기록이 없어요<br>현황 기록 버튼을 눌러주세요 📍</div>'; return; }
+    const logs = Object.values(data).reverse();
     el.innerHTML = logs.map(l => {
       const pct = Math.round(l.fullCount / l.total * 100);
       const bar = '█'.repeat(Math.round(pct/10)) + '░'.repeat(10-Math.round(pct/10));
@@ -973,40 +996,42 @@
 
   // ── 방명록 ──
   let entries = [];
-  try { entries = JSON.parse(localStorage.getItem('lo_gb') || '[]'); } catch(e) {}
+
+  function initGuestbook() {
+    onValue(ref(db, 'guestbook'), (s) => {
+      entries = s.val() ? Object.entries(s.val()).map(([key, val]) => ({...val, key})).reverse() : [];
+      renderEntries();
+      if (isAdmin) renderAdminEntries();
+    });
+  }
 
   function submitEntry() {
     const text = document.getElementById('guestInput').value.trim();
     if (!text) return;
     const now = new Date();
-    entries.unshift({ text, date: now.toLocaleDateString('ko-KR') + ' ' + now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) });
-    try { localStorage.setItem('lo_gb', JSON.stringify(entries)); } catch(e) {}
+    push(ref(db, 'guestbook'), {
+      text,
+      date: now.toLocaleDateString('ko-KR') + ' ' + now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})
+    });
     document.getElementById('guestInput').value = '';
-    renderEntries();
   }
 
-  function deleteEntry(idx) {
-    entries.splice(idx, 1);
-    localStorage.setItem('lo_gb', JSON.stringify(entries));
-    renderEntries();
-    renderAdminEntries();
+  function deleteEntry(key) {
+    remove(ref(db, 'guestbook/' + key));
   }
 
   function clearAllEntries() {
     if (!confirm('방명록을 전부 삭제할까요?')) return;
-    entries = [];
-    localStorage.setItem('lo_gb', JSON.stringify(entries));
-    renderEntries();
-    renderAdminEntries();
+    set(ref(db, 'guestbook'), null);
   }
 
   function renderEntries() {
     const list = document.getElementById('entriesList');
     if (!list) return;
     if (!entries.length) { list.innerHTML = '<div class="no-entries">아직 방명록이 없어요 🌿<br>첫 번째 글을 남겨주세요!</div>'; return; }
-    list.innerHTML = entries.map((e,i) => `
+    list.innerHTML = entries.map(e => `
       <div class="entry">
-        <button class="entry-del" onclick="deleteEntry(${i})">삭제</button>
+        <button class="entry-del" onclick="deleteEntry('${e.key}')">삭제</button>
         <div class="entry-text">${e.text}</div>
         <div class="entry-date">${e.date}</div>
       </div>`).join('');
@@ -1016,20 +1041,41 @@
     const list = document.getElementById('adminEntriesList');
     if (!list) return;
     if (!entries.length) { list.innerHTML = '<div class="no-entries">방명록이 없어요</div>'; return; }
-    list.innerHTML = entries.map((e,i) => `
+    list.innerHTML = entries.map(e => `
       <div class="entry">
-        <button class="entry-del" style="display:block;" onclick="deleteEntry(${i}); renderAdminEntries();">삭제</button>
+        <button class="entry-del" style="display:block;" onclick="deleteEntry('${e.key}')">삭제</button>
         <div class="entry-text">${e.text}</div>
         <div class="entry-date">${e.date}</div>
       </div>`).join('');
   }
 
   // ── 초기화 ──
-  loadState();
-  renderEntries();
-  renderLpFront();
-  const savedNotice = localStorage.getItem('lo_notice') || '';
-  if (savedNotice) showNotice(savedNotice);
+  initSeats();
+  initNotice();
+  initLp();
+  initGuestbook();
+
+  // HTML onclick에서 접근할 수 있도록 window에 노출
+  window.onTableClick = onTableClick;
+  window.onSeatClick = onSeatClick;
+  window.toggleTable = toggleTable;
+  window.openPin = openPin;
+  window.closePin = closePin;
+  window.closePinOut = closePinOut;
+  window.checkPin = checkPin;
+  window.exitAdmin = exitAdmin;
+  window.saveNotice = saveNotice;
+  window.clearNotice = clearNotice;
+  window.addLpItem = addLpItem;
+  window.deleteLpItem = deleteLpItem;
+  window.setNowPlaying = setNowPlaying;
+  window.clearLpList = clearLpList;
+  window.logSnapshot = logSnapshot;
+  window.clearLog = clearLog;
+  window.submitEntry = submitEntry;
+  window.deleteEntry = deleteEntry;
+  window.clearAllEntries = clearAllEntries;
+  window.renderAdminGrid = renderAdminGrid;
 </script>
 </body>
 </html>
